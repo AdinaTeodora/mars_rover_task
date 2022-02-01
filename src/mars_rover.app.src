@@ -1,4 +1,4 @@
-{application, mars_rover_task,
+{application, mars_rover,
  [{description, "Mars Rover OTP application"},
   {vsn, "0.1.0"},
   {registered, []},

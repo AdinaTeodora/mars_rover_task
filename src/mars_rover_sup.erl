@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%% @doc mars_rover_task top level supervisor.
+%% @doc mars_rover top level supervisor.
 %% @end
 %%%-------------------------------------------------------------------
 -module(mars_rover_sup).
