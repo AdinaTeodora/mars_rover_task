@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%% @doc mars_rover_task public API
+%% @doc mars_rover public API
 %% @end
 %%%-------------------------------------------------------------------
 -module(mars_rover_app).
@@ -8,7 +8,7 @@
 
 -export([start/2, stop/1]).
 
-start(_Type, _Args) ->
+start(normal, []) ->
     io:format("Started Mars Rover application~n"),
     mars_rover_sup:start_link().
 
