@@ -14,7 +14,7 @@
 -include("mars_rover.hrl").
 
 %% API
--export([start_link/0]).
+-export([start_link/0, manage_rover/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
@@ -36,6 +36,9 @@
 start_link() ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
+manage_rover() ->
+  gen_server:call(?MODULE, manage_rover).
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
@@ -44,19 +47,17 @@ start_link() ->
 %% @doc Initializes the server by creating the grid, the rovers and the directions.
 init([]) ->
   Grid = setup_grid(),
-  io:format("Grid: ~p ~p~n", [Grid#grid.rows, Grid#grid.cols]),
-
   Rover = setup_rover(Grid),
-  io:format("Rover: (~p,~p,~p) ", [Rover#rover.x_pos, Rover#rover.y_pos, Rover#rover.orientation]),
-
   {ok, [Directions]} = file:consult("directions"),
   io:format("~p~n", [lists:flatten(Directions)]),
 
-  handle_actions(Grid, Rover, Directions),
   {ok, #state{grid = Grid, rover = Rover, directions = Directions}}.
 
 %% @private
 %% @doc Handling call messages
+handle_call(manage_rover, _From, State = #state{grid = Grid, rover = Rover, directions = Directions}) ->
+  FinalRover = handle_actions(Grid, Rover, Directions),
+  {reply, FinalRover, State};
 handle_call(_Request, _From, State = #state{}) ->
   {reply, ok, State}.
 
@@ -89,20 +90,22 @@ code_change(_OldVsn, State = #state{}, _Extra) ->
 
 setup_grid() ->
   {ok, [Grid]} = file:consult("grid"),
-  GridCreated = mars_rover_actions:create_grid(Grid),
-  mars_rover_actions:get_grid_boundaries(GridCreated).
+  {Rows, Columns} = Grid,
+  io:format("Grid: ~p ~p~n", [Rows, Columns]),
+  mars_rover_actions:get_grid(Grid).
 
 setup_rover(Grid) ->
   {ok, [{XPos, YPos, Orientation}]} = file:consult("rover"),
-  mars_rover_actions:create_rover(#rover{x_pos = XPos, y_pos = YPos, orientation = Orientation}, Grid).
+  io:format("Rover: (~p,~p,~p) ", [XPos, YPos, Orientation]),
+  mars_rover_actions:get_rover(#rover{x_pos = XPos, y_pos = YPos, orientation = Orientation}, Grid).
 
-handle_actions(_Grid, Rover, []) ->
-  io:format("Rover final position: (~p,~p,~p)~n", [Rover#rover.x_pos, Rover#rover.y_pos, Rover#rover.orientation]);
+handle_actions(_Grid, #rover{x_pos = X, y_pos = Y, orientation = Orientation}, []) ->
+  io:format("Rover final position: (~p,~p,~p)~n", [X, Y, Orientation]);
 handle_actions(Grid, Rover, [Dir | Directions]) when Dir == "L" orelse Dir == "R" ->
   UpdatedRover = mars_rover_actions:rotate(Rover, Dir),
   handle_actions(Grid, UpdatedRover, Directions);
 handle_actions(Grid, Rover, [Dir | Directions]) when Dir == "F" ->
-  UpdatedRover = mars_rover_actions:forward(Rover, Grid),
+  UpdatedRover = mars_rover_actions:forward(Rover),
   handle_actions(Grid, UpdatedRover, Directions);
 handle_actions(Grid, Rover, Directions) ->
   handle_actions(Grid, Rover, Directions).

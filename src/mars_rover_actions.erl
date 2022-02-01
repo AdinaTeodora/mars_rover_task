@@ -14,22 +14,18 @@
 %% API
 
 %% Grid functionality
--export([create_grid/1, get_grid_boundaries/1]).
+-export([get_grid/1]).
 %% Rover functionality
--export([create_rover/2, rotate/2, forward/2]).
+-export([get_rover/2, rotate/2, forward/1]).
 
-create_grid({M, N}) when is_integer(M) andalso is_integer(N) ->
-  [{Row * 1, Col * 1} || Row <- lists:seq(0, M), Col <- lists:seq(0, N)].
+get_grid({M, N}) ->
+  #grid{rows = M - 1, cols = N - 1}.
 
-get_grid_boundaries(Grid) ->
-  {Rows, Cols} = lists:last(Grid),
-  #grid{rows = Rows, cols = Cols}.
-
-create_rover(#rover{x_pos = X}, #grid{rows = Row}) when X < 0 orelse X > Row ->
+get_rover(#rover{x_pos = X}, #grid{rows = Row}) when X < 0 orelse X > Row ->
   io:format("Rover is outside of the grid~n");
-create_rover(#rover{y_pos = Y}, #grid{cols = Col}) when Y < 0 orelse Y > Col ->
+get_rover(#rover{y_pos = Y}, #grid{cols = Col}) when Y < 0 orelse Y > Col ->
   io:format("Rover is outside of the grid~n");
-create_rover(Rover, _Grid) ->
+get_rover(Rover, _Grid) ->
   Rover.
 
 %% Rotating ability for the rover based on the following:
@@ -54,39 +50,19 @@ rotate(#rover{x_pos = X, y_pos = Y, orientation = "W"}, "R") ->
 rotate(_Rover, _Rotation) ->
   io:format("Unknown commands ~n").
 
+%%check_bounds(#rover{x_pos = X, y_pos = Y}, ) ->
+%%  .
+
 %% Moving ability for the rover based on the following:
 %% Row Position, Column Position and Orientation of the
 %% Rover, and the Grid coordinates. %% TODO
-forward(#rover{x_pos = X, y_pos = Y, orientation = Orientation}, #grid{rows = R, cols = C}) ->
-  case Orientation of
-    "N" ->
-      case Y =/= R of
-        true ->
-          #rover{y_pos = Y + 1};
-        false ->
-          io:format("Cannot move outside of grid~n")
-      end;
-    "S" ->
-      case Y =/= 0 of
-        true ->
-          #rover{y_pos = Y - 1};
-        false ->
-          io:format("Cannot move outside of grid~n")
-      end;
-    "E" ->
-      case X =/= C of
-        true ->
-          #rover{x_pos = X + 1};
-        false ->
-          io:format("Cannot move outside of grid~n")
-      end;
-    "W" ->
-      case Y =/= R of
-        true ->
-          #rover{x_pos = X - 1};
-        false ->
-          io:format("Cannot move outside of grid~n")
-      end;
-    _UnknownDirection ->
-      io:format("Unknown direction~n")
-  end.
+forward(#rover{x_pos = X, y_pos = Y, orientation = "N"}) ->
+  #rover{x_pos = X + 1, y_pos = Y, orientation = "N"};
+forward(#rover{x_pos = X, y_pos = Y, orientation = "S"}) ->
+  #rover{x_pos = X - 1, y_pos = Y, orientation = "S"};
+forward(#rover{x_pos = X, y_pos = Y, orientation = "E"}) ->
+  #rover{x_pos = X, y_pos = Y + 1, orientation = "E"};
+forward(#rover{x_pos = X, y_pos = Y, orientation = "W"}) ->
+  #rover{x_pos = X, y_pos = Y - 1, orientation = "W"};
+forward(_Rover) ->
+  io:format("Off the grid~n").
