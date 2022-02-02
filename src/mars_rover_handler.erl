@@ -11,18 +11,25 @@
 
 -include("mars_rover.hrl").
 
-%% API
+%% Rover movements
 -export([get_grid/1, get_rover/2, rotate/2, move_forward/2]).
+
+%% Input validation
+-export([is_grid_valid/1, is_rover_valid/1, are_directions_valid/1]).
 
 %%%===================================================================
 %% External functions
 %%%===================================================================
 
+%%%----------------------------------------------------
 %% Get grid values starting from row = 0 and col = 0.
+%%%----------------------------------------------------
 get_grid({M, N}) ->
   #grid{rows = M - 1, cols = N - 1}.
 
+%%%----------------------------------------------------
 %% Get rover position and orientation.
+%%%----------------------------------------------------
 get_rover(#rover{x_pos = X}, #grid{rows = Row}) when X < 0 orelse X > Row ->
   io:format("Rover is outside of the grid~n");
 get_rover(#rover{y_pos = Y}, #grid{cols = Col}) when Y < 0 orelse Y > Col ->
@@ -30,7 +37,10 @@ get_rover(#rover{y_pos = Y}, #grid{cols = Col}) when Y < 0 orelse Y > Col ->
 get_rover(Rover, _Grid) ->
   Rover.
 
-%% Rotate rover based on its row position, column position and orientation.
+%%%----------------------------------------------------
+%% Rotate rover based on its row position,
+%% column position and orientation.
+%%%----------------------------------------------------
 rotate(#rover{x_pos = X, y_pos = Y, orientation = "N"}, "L") ->
   #rover{x_pos = X, y_pos = Y, orientation = "W"};
 rotate(#rover{x_pos = X, y_pos = Y, orientation = "N"}, "R") ->
@@ -50,8 +60,10 @@ rotate(#rover{x_pos = X, y_pos = Y, orientation = "W"}, "R") ->
 rotate(_Rover, _Rotation) ->
   {error, lost}.
 
-%% Move the rover forward if it's within bounds of the grid;
+%%%----------------------------------------------------
+%% Move the rover forward if it's within grid's bounds;
 %% Otherwise, return an error that the rover is "Lost".
+%%%----------------------------------------------------
 move_forward(Grid, Rover) ->
   UpdatedRover = case forward(Rover) of
     {error, lost} ->
@@ -66,6 +78,25 @@ move_forward(Grid, Rover) ->
     false ->
       UpdatedRover
   end.
+
+%%%----------------------------------------------------
+%%% Validation of input values
+%%%----------------------------------------------------
+is_grid_valid(#grid{rows = R, cols = C}) when is_integer(R) andalso is_integer(C) ->
+  true;
+is_grid_valid(_Grid) ->
+  false.
+
+is_rover_valid(#rover{x_pos = X, y_pos = Y, orientation = Orientation}) when
+  is_integer(X) andalso
+  is_integer(Y) andalso
+  is_list(Orientation) ->
+    true;
+is_rover_valid(_Rover) ->
+  false.
+
+are_directions_valid(Directions) ->
+  lists:all(fun(Direction) -> is_list(Direction) end, Directions).
 
 %%%===================================================================
 %% Internal Functions
