@@ -2,7 +2,7 @@
 %%% @author teodoraardeleanu
 %%% @copyright (C) 2022, <COMPANY>
 %%% @doc
-%%% Contains grid handling functions and rover actions.
+%%% Contains grid creation, rover creation and rover moving actions.
 %%% @end
 %%% Created : 31. Jan 2022 18:41
 %%%-------------------------------------------------------------------
@@ -12,15 +12,17 @@
 -include("mars_rover.hrl").
 
 %% API
+-export([get_grid/1, get_rover/2, rotate/2, move_forward/2]).
 
-%% Grid functionality
--export([get_grid/1]).
-%% Rover functionality
--export([get_rover/2, rotate/2, forward/1]).
+%%%===================================================================
+%% External functions
+%%%===================================================================
 
+%% Get grid values starting from row = 0 and col = 0.
 get_grid({M, N}) ->
   #grid{rows = M - 1, cols = N - 1}.
 
+%% Get rover position and orientation.
 get_rover(#rover{x_pos = X}, #grid{rows = Row}) when X < 0 orelse X > Row ->
   io:format("Rover is outside of the grid~n");
 get_rover(#rover{y_pos = Y}, #grid{cols = Col}) when Y < 0 orelse Y > Col ->
@@ -28,9 +30,7 @@ get_rover(#rover{y_pos = Y}, #grid{cols = Col}) when Y < 0 orelse Y > Col ->
 get_rover(Rover, _Grid) ->
   Rover.
 
-%% Rotating ability for the rover based on the following:
-%% Row Position, Column Position and Orientation of the
-%% Rover on the Grid.
+%% Rotate rover based on its row position, column position and orientation.
 rotate(#rover{x_pos = X, y_pos = Y, orientation = "N"}, "L") ->
   #rover{x_pos = X, y_pos = Y, orientation = "W"};
 rotate(#rover{x_pos = X, y_pos = Y, orientation = "N"}, "R") ->
@@ -48,14 +48,42 @@ rotate(#rover{x_pos = X, y_pos = Y, orientation = "W"}, "L") ->
 rotate(#rover{x_pos = X, y_pos = Y, orientation = "W"}, "R") ->
   #rover{x_pos = X, y_pos = Y, orientation = "N"};
 rotate(_Rover, _Rotation) ->
-  io:format("Unknown commands ~n").
+  {error, lost}.
 
-%%check_bounds(#rover{x_pos = X, y_pos = Y}, ) ->
-%%  .
+%% Move the rover forward if it's within bounds of the grid;
+%% Otherwise, return an error that the rover is "Lost".
+move_forward(Grid, Rover) ->
+  UpdatedRover = case forward(Rover) of
+    {error, lost} ->
+      {error, lost};
+    Rover1 ->
+      Rover1
+  end,
 
-%% Moving ability for the rover based on the following:
-%% Row Position, Column Position and Orientation of the
-%% Rover, and the Grid coordinates. %% TODO
+  case is_out_of_bounds(UpdatedRover, Grid) of
+    true ->
+      {error, lost};
+    false ->
+      UpdatedRover
+  end.
+
+%%%===================================================================
+%% Internal Functions
+%%%===================================================================
+
+%% Check whether Rover is within the bounds of the grid.
+is_out_of_bounds(#rover{x_pos = X}, _Grid) when X < 0 ->
+  true;
+is_out_of_bounds(#rover{y_pos = Y}, _Grid) when Y < 0 ->
+  true;
+is_out_of_bounds(#rover{y_pos = Y}, #grid{cols = ColMax}) when Y > ColMax ->
+  true;
+is_out_of_bounds(#rover{x_pos = X},#grid{cols = RowMax}) when X > RowMax ->
+  true;
+is_out_of_bounds(_Rover, _Grid) ->
+  false.
+
+%% Move rover based on its row position, column position and orientation.
 forward(#rover{x_pos = X, y_pos = Y, orientation = "N"}) ->
   #rover{x_pos = X + 1, y_pos = Y, orientation = "N"};
 forward(#rover{x_pos = X, y_pos = Y, orientation = "S"}) ->
@@ -65,4 +93,4 @@ forward(#rover{x_pos = X, y_pos = Y, orientation = "E"}) ->
 forward(#rover{x_pos = X, y_pos = Y, orientation = "W"}) ->
   #rover{x_pos = X, y_pos = Y - 1, orientation = "W"};
 forward(_Rover) ->
-  io:format("Off the grid~n").
+  {error, lost}.
