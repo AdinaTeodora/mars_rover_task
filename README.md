@@ -16,7 +16,7 @@ To start up the application and load/print out the input from the files (grid co
 
 To execute the rover's movements in the shell:
 
-    mars_rover:move_rover().
+    mars_rover:move().
 
 # Future improvements:
 - validate / check case-sensitive strings
