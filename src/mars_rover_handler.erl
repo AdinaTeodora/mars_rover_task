@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 31. Jan 2022 18:41
 %%%-------------------------------------------------------------------
--module(mars_rover_actions).
+-module(mars_rover_handler).
 -author("teodoraardeleanu").
 
 -include("mars_rover.hrl").
@@ -24,8 +24,10 @@
 %%%----------------------------------------------------
 %% Get grid values starting from row = 0 and col = 0.
 %%%----------------------------------------------------
-get_grid({M, N}) ->
-  #grid{rows = M - 1, cols = N - 1}.
+get_grid({M, N}) when is_integer(M) andalso is_integer(N) ->
+  #grid{rows = M - 1, cols = N - 1};
+get_grid(_) ->
+  {error, invalid_input}.
 
 %%%----------------------------------------------------
 %% Get rover position and orientation.
@@ -116,12 +118,12 @@ is_out_of_bounds(_Rover, _Grid) ->
 
 %% Move rover based on its row position, column position and orientation.
 forward(#rover{x_pos = X, y_pos = Y, orientation = "N"}) ->
-  #rover{x_pos = X + 1, y_pos = Y, orientation = "N"};
+  #rover{x_pos = X, y_pos = Y + 1, orientation = "N"};
 forward(#rover{x_pos = X, y_pos = Y, orientation = "S"}) ->
-  #rover{x_pos = X - 1, y_pos = Y, orientation = "S"};
+  #rover{x_pos = X, y_pos = Y -1, orientation = "S"};
 forward(#rover{x_pos = X, y_pos = Y, orientation = "E"}) ->
-  #rover{x_pos = X, y_pos = Y + 1, orientation = "E"};
+  #rover{x_pos = X + 1, y_pos = Y, orientation = "E"};
 forward(#rover{x_pos = X, y_pos = Y, orientation = "W"}) ->
-  #rover{x_pos = X, y_pos = Y - 1, orientation = "W"};
+  #rover{x_pos = X - 1, y_pos = Y, orientation = "W"};
 forward(_Rover) ->
   {error, lost}.
