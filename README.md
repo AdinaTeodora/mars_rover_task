@@ -3,7 +3,7 @@ mars_rover
 
 An Erlang OTP application that moves rovers around Mars's surface.
 
-It takes a grid of M rows, N columns, one or more robots and a set of movements for each robot.
+It takes a grid of M rows and N columns, one or more rovers and a set of movements for each rover.
 
 Build
 -----
@@ -19,6 +19,6 @@ To execute the rover's movements in the shell:
     mars_rover:move().
 
 # Future improvements:
-- validate / check case-sensitive strings
-- take a list of rovers and directions (currently can only handle one rover)
+- validate / check case-sensitive strings (directions and orientations)
+- take a list of rovers and movements (currently can only handle one rover)
 - check for crashes between rovers (in the case two rovers end up on the same position)

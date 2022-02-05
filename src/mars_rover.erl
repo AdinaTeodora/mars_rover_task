@@ -2,7 +2,7 @@
 %%% @author teodoraardeleanu
 %%% @copyright (C) 2022, <COMPANY>
 %%% @doc
-%%% Creates the grid and the rover;
+%%% Setup the grid and the rover;
 %%% Moves the rover on the grid by calling different actions based
 %%% on the directions provided.
 %%% @end
@@ -22,8 +22,6 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
   code_change/3]).
 
--define(SERVER, ?MODULE).
-
 -record(state, {
     grid,
     rover,
@@ -36,7 +34,7 @@
 
 %% @doc Spawns the server and registers the local name (unique)
 start_link() ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+  gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 %% @doc Performs rover actions and returns its final position in the grid.
 move() ->
@@ -100,7 +98,7 @@ code_change(_OldVsn, State = #state{}, _Extra) ->
 setup_grid() ->
   {ok, [GridValues]} = file:consult("grid"),
   {Rows, Columns} = GridValues,
-  io:format("Grid: ~p ~p~n", [Rows, Columns]),
+  io:format("~p ~p~n", [Rows, Columns]),
   case mars_rover_handler:get_grid(GridValues) of
     {error, invalid_input} =  Error ->
       Error;
@@ -112,7 +110,7 @@ setup_grid() ->
 %% input file and adding these to a rover record.
 setup_rover(Grid) ->
   {ok, [{XPos, YPos, Orientation}]} = file:consult("rover"),
-  io:format("Rover: (~p,~p,~p)~n", [XPos, YPos, Orientation]),
+  io:format("(~p,~p,~p) ", [XPos, YPos, Orientation]),
   mars_rover_handler:get_rover(#rover{x_pos = XPos, y_pos = YPos, orientation = Orientation}, Grid).
 
 maybe_perform_movements(Grid, Rover, Directions) ->
@@ -140,10 +138,11 @@ validate_inputs(Grid, Rover, Directions) ->
 %%  - if the rover passes the grid bounds, we print out the final valid directions;
 %%  - Once all directions in the list are checked, its final position is printed out.
 handle_rover_actions(_Grid, #rover{x_pos = X, y_pos = Y, orientation = Orientation}, []) ->
-  io:format("Rover final position: (~p,~p,~p)~n", [X, Y, Orientation]);
+  io:format("(~p,~p,~p)~n", [X, Y, Orientation]);
 %% Rotate the rover by checking the direction from the input file is
 %% either left ("L") or right ("R");
-handle_rover_actions(Grid, Rover =  #rover{x_pos = X, y_pos = Y, orientation = Orientation}, [Dir | Directions]) when Dir == "L" orelse Dir == "R" ->
+handle_rover_actions(Grid, Rover =  #rover{x_pos = X, y_pos = Y, orientation = Orientation}, [Dir | Directions]) when
+  Dir == ?LEFT orelse Dir == ?RIGHT ->
   case mars_rover_handler:rotate(Rover, Dir) of
     {error, lost} ->
       io:format("(~p,~p,~p) LOST~n", [X, Y, Orientation]);
@@ -151,7 +150,8 @@ handle_rover_actions(Grid, Rover =  #rover{x_pos = X, y_pos = Y, orientation = O
       handle_rover_actions(Grid, UpdatedRover, Directions)
   end;
 %% Move the rover forward by checking the direction from the input file ("F");
-handle_rover_actions(Grid, Rover = #rover{x_pos = X, y_pos = Y, orientation = Orientation}, [Dir | Directions]) when Dir == "F" ->
+handle_rover_actions(Grid, Rover = #rover{x_pos = X, y_pos = Y, orientation = Orientation}, [Dir | Directions]) when
+  Dir == ?FORWARD ->
   case mars_rover_handler:move_forward(Grid, Rover) of
     {error, lost} ->
       io:format("(~p,~p,~p) LOST~n", [X, Y, Orientation]);

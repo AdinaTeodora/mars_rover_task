@@ -9,13 +9,20 @@
 -module(mars_rover_handler).
 -author("teodoraardeleanu").
 
--include("mars_rover.hrl").
-
 %% Rover movements
 -export([get_grid/1, get_rover/2, rotate/2, move_forward/2]).
 
 %% Input validation
 -export([is_grid_valid/1, is_rover_valid/1, are_directions_valid/1]).
+
+-include("mars_rover.hrl").
+
+-define(MIN, 0).
+
+-define(NORTH, "N").
+-define(SOUTH, "S").
+-define(EAST,  "E").
+-define(WEST,  "W").
 
 %%%===================================================================
 %% External functions
@@ -32,9 +39,9 @@ get_grid(_) ->
 %%%----------------------------------------------------
 %% Get rover position and orientation.
 %%%----------------------------------------------------
-get_rover(#rover{x_pos = X}, #grid{rows = Row}) when X < 0 orelse X > Row ->
+get_rover(#rover{x_pos = X}, #grid{rows = RowMax}) when X < ?MIN orelse X > RowMax ->
   io:format("Rover is outside of the grid~n");
-get_rover(#rover{y_pos = Y}, #grid{cols = Col}) when Y < 0 orelse Y > Col ->
+get_rover(#rover{y_pos = Y}, #grid{cols = ColMax}) when Y < ?MIN orelse Y > ColMax ->
   io:format("Rover is outside of the grid~n");
 get_rover(Rover, _Grid) ->
   Rover.
@@ -43,22 +50,22 @@ get_rover(Rover, _Grid) ->
 %% Rotate rover based on its row position,
 %% column position and orientation.
 %%%----------------------------------------------------
-rotate(#rover{x_pos = X, y_pos = Y, orientation = "N"}, "L") ->
-  #rover{x_pos = X, y_pos = Y, orientation = "W"};
-rotate(#rover{x_pos = X, y_pos = Y, orientation = "N"}, "R") ->
-  #rover{x_pos = X, y_pos = Y, orientation = "E"};
-rotate(#rover{x_pos = X, y_pos = Y, orientation = "S"}, "L") ->
-  #rover{x_pos = X, y_pos = Y, orientation = "E"};
-rotate(#rover{x_pos = X, y_pos = Y, orientation = "S"}, "R") ->
-  #rover{x_pos = X, y_pos = Y, orientation = "W"};
-rotate(#rover{x_pos = X, y_pos = Y, orientation = "E"}, "L") ->
-  #rover{x_pos = X, y_pos = Y, orientation = "N"};
-rotate(#rover{x_pos = X, y_pos = Y, orientation = "E"}, "R") ->
-  #rover{x_pos = X, y_pos = Y, orientation = "S"};
-rotate(#rover{x_pos = X, y_pos = Y, orientation = "W"}, "L") ->
-  #rover{x_pos = X, y_pos = Y, orientation = "S"};
-rotate(#rover{x_pos = X, y_pos = Y, orientation = "W"}, "R") ->
-  #rover{x_pos = X, y_pos = Y, orientation = "N"};
+rotate(#rover{x_pos = X, y_pos = Y, orientation = ?NORTH}, ?LEFT) ->
+  #rover{x_pos = X, y_pos = Y, orientation = ?WEST};
+rotate(#rover{x_pos = X, y_pos = Y, orientation = ?NORTH}, ?RIGHT) ->
+  #rover{x_pos = X, y_pos = Y, orientation = ?EAST};
+rotate(#rover{x_pos = X, y_pos = Y, orientation = ?SOUTH}, ?LEFT) ->
+  #rover{x_pos = X, y_pos = Y, orientation = ?EAST};
+rotate(#rover{x_pos = X, y_pos = Y, orientation = ?SOUTH}, ?RIGHT) ->
+  #rover{x_pos = X, y_pos = Y, orientation = ?WEST};
+rotate(#rover{x_pos = X, y_pos = Y, orientation = ?EAST}, ?LEFT) ->
+  #rover{x_pos = X, y_pos = Y, orientation = ?NORTH};
+rotate(#rover{x_pos = X, y_pos = Y, orientation = ?EAST}, ?RIGHT) ->
+  #rover{x_pos = X, y_pos = Y, orientation = ?SOUTH};
+rotate(#rover{x_pos = X, y_pos = Y, orientation = ?WEST}, ?LEFT) ->
+  #rover{x_pos = X, y_pos = Y, orientation = ?SOUTH};
+rotate(#rover{x_pos = X, y_pos = Y, orientation = ?WEST}, ?RIGHT) ->
+  #rover{x_pos = X, y_pos = Y, orientation = ?NORTH};
 rotate(_Rover, _Rotation) ->
   {error, lost}.
 
@@ -68,8 +75,8 @@ rotate(_Rover, _Rotation) ->
 %%%----------------------------------------------------
 move_forward(Grid, Rover) ->
   UpdatedRover = case forward(Rover) of
-    {error, lost} ->
-      {error, lost};
+    {error, lost} = Error ->
+      Error;
     Rover1 ->
       Rover1
   end,
@@ -90,10 +97,8 @@ is_grid_valid(_Grid) ->
   false.
 
 is_rover_valid(#rover{x_pos = X, y_pos = Y, orientation = Orientation}) when
-  is_integer(X) andalso
-  is_integer(Y) andalso
-  is_list(Orientation) ->
-    true;
+  is_integer(X) andalso is_integer(Y) andalso is_list(Orientation) ->
+  true;
 is_rover_valid(_Rover) ->
   false.
 
@@ -105,9 +110,9 @@ are_directions_valid(Directions) ->
 %%%===================================================================
 
 %% Check whether Rover is within the bounds of the grid.
-is_out_of_bounds(#rover{x_pos = X}, _Grid) when X < 0 ->
+is_out_of_bounds(#rover{x_pos = X}, _Grid) when X < ?MIN ->
   true;
-is_out_of_bounds(#rover{y_pos = Y}, _Grid) when Y < 0 ->
+is_out_of_bounds(#rover{y_pos = Y}, _Grid) when Y < ?MIN ->
   true;
 is_out_of_bounds(#rover{y_pos = Y}, #grid{cols = ColMax}) when Y > ColMax ->
   true;
@@ -117,13 +122,13 @@ is_out_of_bounds(_Rover, _Grid) ->
   false.
 
 %% Move rover based on its row position, column position and orientation.
-forward(#rover{x_pos = X, y_pos = Y, orientation = "N"}) ->
-  #rover{x_pos = X, y_pos = Y + 1, orientation = "N"};
-forward(#rover{x_pos = X, y_pos = Y, orientation = "S"}) ->
-  #rover{x_pos = X, y_pos = Y -1, orientation = "S"};
-forward(#rover{x_pos = X, y_pos = Y, orientation = "E"}) ->
-  #rover{x_pos = X + 1, y_pos = Y, orientation = "E"};
-forward(#rover{x_pos = X, y_pos = Y, orientation = "W"}) ->
-  #rover{x_pos = X - 1, y_pos = Y, orientation = "W"};
+forward(#rover{x_pos = X, y_pos = Y, orientation = ?NORTH}) ->
+  #rover{x_pos = X, y_pos = Y + 1, orientation = ?NORTH};
+forward(#rover{x_pos = X, y_pos = Y, orientation = ?SOUTH}) ->
+  #rover{x_pos = X, y_pos = Y -1, orientation = ?SOUTH};
+forward(#rover{x_pos = X, y_pos = Y, orientation = ?EAST}) ->
+  #rover{x_pos = X + 1, y_pos = Y, orientation = ?EAST};
+forward(#rover{x_pos = X, y_pos = Y, orientation = ?WEST}) ->
+  #rover{x_pos = X - 1, y_pos = Y, orientation = ?WEST};
 forward(_Rover) ->
   {error, lost}.

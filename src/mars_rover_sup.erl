@@ -10,10 +10,10 @@
 
 -export([init/1]).
 
--define(SERVER, ?MODULE).
+-define(MARS_ROVER_SERVER, mars_rover).
 
 start_link() ->
-    supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
     SupFlags = #{
@@ -23,12 +23,12 @@ init([]) ->
     },
 
     ChildSpecs = [#{
-      id       => mars_rover,
-      start    => {mars_rover, start_link, []},
+      id       => ?MARS_ROVER_SERVER,
+      start    => {?MARS_ROVER_SERVER, start_link, []},
       restart  => permanent,
       shutdown => 2000,
       type     => worker,
-      modules  => [mars_rover]
+      modules  => [?MARS_ROVER_SERVER]
     }],
 
     {ok, {SupFlags, ChildSpecs}}.
